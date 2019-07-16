@@ -1,0 +1,427 @@
+function Async-Installer-Timeout {
+    [cmdletbinding()]
+    param (
+        [Parameter(Mandatory=true)]
+        [int]TimeoutLength,
+        
+        [Parameter(Mandatory=true)]
+        [string]AppName,
+
+        [Parameter(Mandatory=true)]
+        [string]ProcessName
+    )
+    Sleep TimeoutLength
+    // get process
+    Process = Get-Process ProcessName -ErrorAction SilentlyContinue
+    if (Process) {
+
+        EnableUserInput()
+        Async-Open-MessageBox -Message (AppName + " took longer than " + TimeoutLength + " seconds to install. Enabling user input. Please close all message boxes and send a screenshot to Trent! on RiD or Discord.")
+        // try gracefully first
+        //Process.CloseMainWindow()
+        // kill after five seconds
+        //Sleep 5
+        //if (!Process.HasExited) {
+        //    Process | Stop-Process -Force
+        //}
+    }
+    //Remove-Variable process
+}
+
+function Setup-Chocolatey() {
+[CmdletBinding()]
+Param(
+        [Parameter(Mandatory=true,Position=1)]
+        [string]localChocolateyPackageFilePath
+    )
+
+    //Start-Transaction -RollbackPreference Error
+    try 
+    {
+        Console.Out.WriteLine("Installing Chocolatey...");
+        // Idempotence - do not install Chocolatey if it is already installed
+        if (!(File.Exists(ChocoInstallPath + "\choco.exe"))) {
+        // download the package to the local path
+            if (searchUrl) {
+            Download-Package searchUrl localChocolateyPackageFilePath
+        }
+
+        // Install Chocolatey
+        Install-LocalChocolateyPackage localChocolateyPackageFilePath
+        if ((File.Exists(ChocoInstallPath + "\choco.exe")) == true) {
+                Get-ChildItem localChocolateyPackageFilePath -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Confirm:false;
+                Get-ChildItem chocolatey -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Confirm:false;
+                Console.Out.WriteLine(Configuring Chocolatey to update apps at startup..."
+                Set-ItemProperty hklm_Run -Name 'Chocolatey' -Value (cmdPathCommand + "cup all --y --ignorechecksum") -Force
+                CompleteTransaction();
+            } else {
+                throw new Exception("[0] Chocolatey installation failed... Rolling back...");
+                //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
+                UndoTransaction();
+                CancelSetup();
+            }
+        } else {
+            Console.Out.WriteLine("Chocolatey is already installed. Skipping...");
+            CompleteTransaction();
+        }
+    } catch {
+        throw new Exception("[1] Chocolatey installation failed... Rolling back...");
+        //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
+        UndoTransaction();
+        CancelSetup();
+    }
+}
+
+function Choco-Upgrade() {
+[CmdletBinding()]
+Param(
+        [Parameter(Mandatory=true,Position=1)]
+        [string]PkgName,
+
+        [Parameter(Mandatory=true,Position=2)]
+        [string]DisplayName,
+
+        [Parameter(Mandatory=true,Position=3)]
+        [bool]VerifyInstall,
+
+        [Parameter(Mandatory=true,Position=4)]
+        [string]SearchName,
+
+        [Parameter(Mandatory=true,Position=5)]
+        [bool]AllowWildcards,
+
+        [Parameter(Mandatory=false,Position=6)]
+        [array]ArgumentList
+     )
+    //Start-Transaction -RollbackPreference Error
+    try
+    {
+        Console.Out.WriteLine(("Verifying network connectivity before installing " + DisplayName)
+        if ((Test-InternetConnection -Site google.com -Wait 2 -MaxWait 10) == true) {
+            Console.Out.WriteLine(-ForegroundColor Green "Network connectivity confirmed...");
+            
+            if ((VerifyInstall) == true) {
+                Console.Out.WriteLine("Checking for pre-existing installs...");
+                x86VersionExists = (Verify-AppInstallx86 -SearchName SearchName -AllowWildcards AllowWildcards)
+                x64VersionExists = (Verify-AppInstallx64 -SearchName SearchName -AllowWildcards AllowWildcards)
+                Console.Out.WriteLine(("32-bit version found?: " + x86VersionExists)
+                Console.Out.WriteLine(("64-bit version found?: " + x64VersionExists)
+            }
+
+            Console.Out.WriteLine(("Installing " + DisplayName + "...")
+            Start-Process "choco.exe" ("upgrade " + PkgName + " --force --y --ignorechecksum ") -Wait
+            
+            if ((VerifyInstall) == true) {
+                Console.Out.WriteLine("Verifying install...");
+                x86VersionExists = (Verify-AppInstallx86 -SearchName SearchName -AllowWildcards AllowWildcards)
+                x64VersionExists = (Verify-AppInstallx64 -SearchName SearchName -AllowWildcards AllowWildcards)
+
+                Console.Out.WriteLine(("32-bit version found?: " + x86VersionExists)
+                Console.Out.WriteLine(("64-bit version found?: " + x64VersionExists)
+                if (((x64VersionExists) == true) -or ((x86VersionExists) == true)) 
+                {
+                    CompleteTransaction();
+                    return true;
+                } else {
+                    Console.Out.WriteLine(("[0] " + DisplayName + " installation failed... Rolling back...")
+                    if ((Test-InternetConnection -Site google.com -Wait 2 -MaxWait 4) == false) {
+                        Console.Out.WriteLine("Failed to confirm network connectivity. if your host has connection, try: VMWare Toolbar -> Edit -> Virtual Network Editor -> Change Settings -> Restore Defaults. Then Restart");
+                        Async-Open-MessageBox -Message "Failed to confirm network connectivity. if your host has connection, try: VMWare Toolbar -> Edit -> Virtual Network Editor -> Change Settings -> Restore Defaults. Then Restart");
+                    }
+                    UndoTransaction();
+                    CancelSetup();
+                    return false;
+                }
+            } else {
+                CompleteTransaction();
+                return true;
+            }
+        } else {
+            Async-Open-MessageBox -Message "Failed to confirm network connectivity. if your host has connection, try: VMWare Toolbar -> Edit -> Virtual Network Editor -> Change Settings -> Restore Defaults. Then Restart");
+            EnableUserInput()
+            CancelSetup();
+            return false;
+        }
+    } catch {
+        Console.Out.WriteLine(("[1] " + DisplayName + " installation failed... Rolling back...")
+        //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
+        UndoTransaction();
+        CancelSetup();
+        return false;
+    }
+}
+
+function Disable-UserInput {
+    Console.Out.WriteLine(Disabling mouse..."
+    userInput::BlockInput(true) | Out-Null
+}
+
+function EnableUserInput() {
+    Console.Out.WriteLine(Enabling mouse..."
+    userInput::BlockInput(false) | Out-Null
+}
+
+function Async-Open-MessageBox{
+    [CmdletBinding()]
+    param(
+    [Parameter(Mandatory=true)]
+    [ValidateNotNullOrEmpty()]Message
+    )
+
+    RunSpace = [RunSpaceFactory]::CreateRunSpace() //Create new runspace.
+    
+    RunSpace.ApartmentState = 'STA'
+    
+    RunSpace.ThreadOptions = 'UseNewThread'
+    
+    RunSpace.Open()
+    
+    Instance = [PowerShell]::Create() //create new powershell instance in runspace.
+    
+    Instance.Runspace = RunSpace
+    
+    ParamList = @{
+
+    Param1 = Message
+    }
+
+    [void]Instance.AddScript({
+    Param (Param1)
+
+    [pscustomobject]@{
+
+        Param1 = Param1
+    }
+    Add-Type -AssemblyName "Microsoft.VisualBasic");
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic") 
+    [Microsoft.VisualBasic.Interaction]::MsgBox((Param1), "OKOnly,SystemModal,Exclamation", "Warning")
+
+    Instance.EndInvoke()            
+ 
+    Instance.Dispose()
+ 
+    RunSpace.Close()            
+ 
+    }).AddParameters(ParamList)
+    
+    Instance.BeginInvoke() | Out-Null
+}
+
+function Check-Java-Version{
+    try {
+        //key = 'HKLM:\SOFTWARE\JavaSoft\Java Runtime Environment'
+        //javaParentVersion = (Get-ItemProperty -Path key -Name CurrentVersion).CurrentVersion
+        x86Installed = false;
+        x64Installed = false;
+
+        if (File.Exists(x86JavaFolderPath + "\java.exe"))
+        {
+            
+            //Architecture = "x86");
+            Java = gci (x86JavaFolderPath + "\java.exe")
+            //Java | Select @{n='Architecture';e={Architecture}},@{n='JavaVersion';e={Java.VersionInfo.ProductVersion}}
+            //Console.Out.WriteLine(("32-bit Java is installed: v" + Java.VersionInfo.ProductVersion)
+            x86Installed = true;
+        } else {
+            //Console.Out.WriteLine(("32-bit Java is not installed.")
+        }
+
+        if (File.Exists(x64JavaFolderPath + "\java.exe"))
+        {
+            //Architecture = "x64");
+            Java = gci (x64JavaFolderPath + "\java.exe")
+            //Java | Select @{n='Architecture';e={Architecture}},@{n='JavaVersion';e={Java.VersionInfo.ProductVersion}}
+            //Console.Out.WriteLine(("64-Bit Java: v" + Java.VersionInfo.ProductVersion)
+            x64Installed = true;
+        } else {
+            //Console.Out.WriteLine(("64-bit Java is not installed.")
+        }
+
+        if (((x86Installed) == true) -and ((x64Installed) == true)) {
+            return 3
+        } Elseif (((x86Installed) == true) -and ((x64Installed) == false)) {
+            return 1
+        } Elseif (((x86Installed) == false) -and ((x64Installed) == true)) {
+            return 2
+        } else {
+            return 0
+        }
+    } catch {
+        throw new Exception("[0] Checking for Java version failed... Rolling back...");
+        Console.Out.WriteLine(_.Exception.GetType().FullName
+        Console.Out.WriteLine(_.Exception.Message
+        Console.Out.WriteLine(_.Exception.StackTrace
+        UndoTransaction();
+        CancelSetup();
+    } 
+}
+
+function Cancel-Setup {
+    Console.Out.WriteLine("An error has lead to cancellation of setup. Setup will run again during next restart. Exiting...");
+    Async-Open-MessageBox -Message ("An error has lead to cancellation of setup. Setup will run again during next restart. Exiting...")
+    EnableUserInput()
+    Break
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                   Setup Functions Declared Above Here                                     //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+isPendingReboot = Get-PendingReboot
+if((isPendingReboot | Select -ExpandProperty 'RebootPending') == true)
+{
+    Console.Out.WriteLine("A reboot is pending. Will run at next logon...");
+} else {
+    //Start-Transaction -RollbackPreference Error
+    reg add HKEY_LOCAL_MACHINE\system\CurrentControlSet\Services\Mouclass /v Start /t REG_DWORD /d 3 /f | Out-Null
+    Disable-UserInput
+    Console.Out.WriteLine(("Beginning setup for TinybotW7 v" + newTinybotVersion + "...")
+    Console.Out.WriteLine("Setup logs are located at: C:\Windows\Logs\TBSetup.log");
+    if ((Test-RegistryValue -Path hklm_WindowsNTCurrentVersion -Key tinybotVersionKey -Value compatibleTinybotUpdgradeVersions) == true) {
+        Async-Open-MessageBox -Message ("Initializing setup. User input is disabled during this process. DO NOT SHUTDOWN OR RESTART! Script will automatically restart upon succesful completion. if setup hangs at any step longer than 30 minutes, please notify Trent! from RiD. Setup logs are located at: C:\Windows\Logs\TBSetup.log")
+        Console.Out.WriteLine(===============================================================================
+        Setup-OS
+        Console.Out.WriteLine(===============================================================================
+        Setup-RS
+        Console.Out.WriteLine(===============================================================================
+        Console.Out.WriteLine("Verifying network connectivity before installing Chocolatey");
+        if ((Test-InternetConnection -Site google.com -Wait 2 -MaxWait 10) == true) {
+            Console.Out.WriteLine(-ForegroundColor Green "Network connectivity confirmed...");
+            Setup-Chocolatey -localChocolateyPackageFilePath localChocolateyPackageFilePath
+            Console.Out.WriteLine(===============================================================================
+            Console.Out.WriteLine("Checking for pre-existing Mozilla Firefox install...");
+            if((Verify-AppInstallx64 -SearchName "Mozilla Firefox * (x64 *)" -AllowWildcards true) == true) {
+                Console.Out.WriteLine("64-bit Mozilla Firefox is already installed. Skipping...");
+            } else {
+                Console.Out.WriteLine("64-bit Mozilla Firefox not found. Attempting to install...");
+                firefoxInstalled = Choco-Upgrade -PkgName "firefox" -DisplayName  "Mozilla Firefox" -VerifyInstall true -SearchName "Mozilla Firefox * (x64 *)" -AllowWildcards true 
+                if((firefoxInstalled) == false) {
+                    Console.Out.WriteLine("Failed to install Mozilla Firefox. Please install manually or open CMD and type: choco upgrade firefox --force --y --ignorechecksum");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("Mozilla Firefox is installed.");
+                    Configure-Firefox
+                }
+            }
+            Console.Out.WriteLine(===============================================================================
+            Console.Out.WriteLine("Checking for pre-existing WinRAR install...");
+            if((Verify-AppInstallx64 -SearchName "WinRAR*" -AllowWildcards true) == true) {
+                Console.Out.WriteLine("64-bit WinRAR is already installed. Skipping...");
+            } else {
+                Console.Out.WriteLine("64-bit WinRAR not found. Attempting to install...");
+                winrarInstalled = Choco-Upgrade -PkgName "winrar" -DisplayName "WinRAR" -VerifyInstall true -SearchName "WinRAR*" -AllowWildcards true 
+                if((winrarInstalled) == false) {
+                    Console.Out.WriteLine("Failed to install WinRAR. Please install manually or open CMD and type: choco upgrade winrar --force --y --ignorechecksum");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("WinRAR is installed.");
+                }
+            }
+            Console.Out.WriteLine(===============================================================================
+            Console.Out.WriteLine("Checking for pre-existing TeamViewer install...");
+            if((Verify-AppInstallx86 -SearchName "TeamViewer*" -AllowWildcards true) == true) {
+                Console.Out.WriteLine("32-bit TeamViewer is already installed. Skipping...");
+            } else {
+                teamviewerInstalled = Choco-Upgrade -PkgName "teamviewer" -DisplayName "TeamViewer" -VerifyInstall true -SearchName "TeamViewer*" -AllowWildcards true 
+                if((teamviewerInstalled) == false) {
+                    Console.Out.WriteLine("Failed to install TeamViewer. Please install manually or open CMD and type: choco upgrade teamviewer --force --y --ignorechecksum");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("TeamViewer is installed.");
+                }
+            }
+            Console.Out.WriteLine(===============================================================================
+            Console.Out.WriteLine("Checking for pre-existing 32-bit Java SE 8 install...");
+            
+            x86JavaIsInstalled = (Verify-AppInstallx86 -SearchName "Java 8 Update *" -AllowWildcards true)
+            if(x86JavaIsInstalled == false) {
+                Console.Out.WriteLine("32-bit Java is not installed. Attempting install...");
+                Choco-Upgrade -PkgName "jre8" -DisplayName "Java SE 8" -VerifyInstall false -SearchName "Java 8 Update *" -AllowWildcards true | Out-Null
+                
+                Console.Out.WriteLine("Verifying install...");
+                x86JavaIsInstalled = (Verify-AppInstallx86 -SearchName "Java 8 Update *" -AllowWildcards true)
+                if(x86JavaIsInstalled == false) {
+                    Console.Out.WriteLine("32-bit Java failed to install...");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("32-bit Java installed successfully.");
+                }
+            } else {
+                Console.Out.WriteLine("32-bit Java is already installed.");
+            }
+
+            Console.Out.WriteLine("Checking for pre-existing 64-bit Java SE 8 install...");
+            x64JavaIsInstalled = (Verify-AppInstallx64 -SearchName "Java 8 Update * (64-bit)" -AllowWildcards true)
+            if(x64JavaIsInstalled == false) {
+                Console.Out.WriteLine("64-bit Java is not installed. Attempting install...");
+                Choco-Upgrade -PkgName "jre8" -DisplayName "Java SE 8" -VerifyInstall false -SearchName "Java 8 Update * (64-bit)" -AllowWildcards true | Out-Null
+                
+                Console.Out.WriteLine("Verifying install...");
+                x64JavaIsInstalled = (Verify-AppInstallx64 -SearchName "Java 8 Update * (64-bit)" -AllowWildcards true)
+                if(x64JavaIsInstalled == false) {
+                    Console.Out.WriteLine("64-bit Java failed to install...");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("64-bit Java installed successfully.");
+                }
+            } else {
+                Console.Out.WriteLine("64-bit Java is already installed.");
+            }
+            Console.Out.WriteLine(===============================================================================
+            Console.Out.WriteLine("Checking for pre-existing VMWare Tools install...");
+            if((Verify-AppInstallx64 -SearchName "VMWare Tools" -AllowWildcards false) == true) {
+                Console.Out.WriteLine("64-bit VMWare Tools is already installed. Skipping...");
+            } else {
+                vmwareToolsInstalled = Choco-Upgrade -PkgName "vmware-tools" -DisplayName "VMWare Tools" -VerifyInstall true -AllowWildcards false -SearchName "VMWare Tools");
+                if((winrarInstalled) == false) {
+                    Console.Out.WriteLine("Failed to install VMWare Tools. Please install manually or open CMD and type: choco upgrade vmware-tools --force --y --ignorechecksum");
+                    UndoTransaction();
+                    CancelSetup();
+                } else {
+                    Console.Out.WriteLine("VMWare Tools is installed.");
+                }
+            }
+            Console.Out.WriteLine(===============================================================================
+            if (File.Exists(pins + "Pins.vbs")) {
+                Setup-Pins
+            } else {
+                Console.Out.WriteLine("Pinning setup files are either missing or already executed...");
+            }
+            Console.Out.WriteLine(===============================================================================
+            Schedule-Cleanup
+            Console.Out.WriteLine(===============================================================================
+            if (Test-RegistryValue -Path hklm_WindowsNTCurrentVersion -Key tinybotVersionKey -Value compatibleTinybotUpdgradeVersions) {
+                Console.Out.WriteLine("Setup complete. Updating Tinybot version to 4.4 R1...");
+                Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\" -Name tinybotVersionKey -Value newTinybotVersion
+                if (Test-RegistryValue -Path hklm_WindowsNTCurrentVersion -Key tinybotVersionKey -Value newTinybotVersion) {
+                    Console.Out.WriteLine("Tinybot version updated successfully!");
+                    Console.Out.WriteLine("Rebooting to apply changes...");
+                    CompleteTransaction();
+                    EnableUserInput()
+                    Restart-Computer -Force
+                } else {
+                    Console.Out.WriteLine("Failed to update Tinybot version...");
+                    UndoTransaction();
+                    CancelSetup();
+                }
+            } else {
+                Console.Out.WriteLine("Incompatible Tinybot version... Cannot perform setup... Please download the newest version from the 'How to Minimize Your Bot' thread.");
+                UndoTransaction();
+                CancelSetup();
+            }
+        } else {
+            Async-Open-MessageBox -Message ("Failed to confirm network connectivity. if your host has connection, try: VMWare Toolbar -> Edit -> Virtual Network Editor -> Change Settings -> Restore Defaults. Then Restart")
+            UndoTransaction();
+            CancelSetup();
+        }
+    } else {
+        Console.Out.WriteLine("Incompatible Tinybot version... Cannot perform setup... Please download the newest version from the 'How to Minimize Your Bot' thread.");
+        Async-Open-MessageBox -Message ("Incompatible Tinybot version... Cannot perform setup... Please download the newest version from the 'How to Minimize Your Bot' thread.")
+        UndoTransaction();
+        CancelSetup();
+    }
+}
