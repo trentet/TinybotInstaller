@@ -15,9 +15,9 @@ namespace TinybotInstaller
     class Class1
     {
         static string PSScriptRoot = "PSScriptRoot"; //Split-Path -Parent -Path MyInvocation.MyCommand.Definition;
-        static string setup = Path.Combine(PSScriptRoot + @"\Setup\");
+        static readonly string setup = Path.Combine(PSScriptRoot + @"\Setup\");
 
-        static string config = Path.Combine(setup, @"Config\");
+        static readonly string config = Path.Combine(setup, @"Config\");
 
         static string firefox = Path.Combine(config + @"Firefox\");
         static string firefoxinstall = @"C:\Program Files\Mozilla Firefox\";
@@ -48,12 +48,12 @@ namespace TinybotInstaller
         static string hkcu_RunOnce = Path.Combine(hkcu_WindowsCurrentVersion, runOnceKey);
         static string hklm_WindowsNTCurrentVersion = @"HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
 
-        static string tinybotVersionKey = "CurrentVersionTinybot";
+        static readonly string tinybotVersionKey = "CurrentVersionTinybot";
         static List<string> compatibleTinybotUpdgradeVersions = new List<string> { "4.4 Base 1" };
-        static string newTinybotVersion = "4.4 R1";
+        static readonly Version newTinybotVersion = new Version("5.0.0.0");
 
-        static string x64JavaFolderPath = @"C:\Program Files\Java\jre*\bin";
-        static string x86JavaFolderPath = @"C:\Program Files (x86)\Java\jre*\bin";
+        //static string x64JavaFolderPath = @"C:\Program Files\Java\jre*\bin";
+        //static string x86JavaFolderPath = @"C:\Program Files (x86)\Java\jre*\bin";
 
         static string cmdPath = @"C:\Windows\System32\cmd.exe";
         static string cmdPathCommand = (cmdPath + " /c ");
@@ -433,7 +433,7 @@ namespace TinybotInstaller
                 {
                    Console.Out.WriteLine("OS Configuration has already been completed. Skipping...");
                    CompleteTransaction();
-              }
+                }
             }
             catch
             {
@@ -664,7 +664,46 @@ namespace TinybotInstaller
 
         public void SetupChocolatey(string localChocolateyPackageFilePath)
         {
+            //Start-Transaction -RollbackPreference Error
+            try
+            {
+                var ChocoInstallPath = Path.Combine(Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System)), @"ProgramData\Chocolatey\bin");
+                Console.Out.WriteLine("Installing Chocolatey...");
+                // Idempotence - do not install Chocolatey if it is already installed
+                if (!(File.Exists(ChocoInstallPath + "\\choco.exe")))
+                {
+                    string command = @"@powershell -NoProfile -ExecutionPolicy Bypass -Command ""iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"" && SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin";
+                    ExecuteCMDCommand(command);
 
+                    if ((File.Exists(ChocoInstallPath + "\\choco.exe")) == true)
+                    {
+                        //Get - ChildItem localChocolateyPackageFilePath - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;
+                        //Get - ChildItem chocolatey - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;
+                        Console.Out.WriteLine("Configuring Chocolatey to update apps at startup...");
+                        Registry.SetValue(hklm_Run, "Chocolatey", cmdPathCommand + "cup all --y --ignorechecksum");
+                        CompleteTransaction();
+                    }
+                    else
+                    {
+                        //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
+                        UndoTransaction();
+                        CancelSetup();
+                        throw new Exception("[0] Chocolatey installation failed... Rolling back...");
+                    }
+                }
+                else
+                {
+                    Console.Out.WriteLine("Chocolatey is already installed. Skipping...");
+                    CompleteTransaction();
+                }
+            }
+            catch
+            {
+                //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
+                UndoTransaction();
+                CancelSetup();
+                throw new Exception("[1] Chocolatey installation failed... Rolling back...");
+            }
         }
 
         public bool ChocoUpgrade(string pkgName, string displayName, bool verifyInstall, string searchName, bool allowWildcards)
