@@ -65,6 +65,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Class1.cs" />
+    <Compile Include="ChocoUtil.cs" />
+    <Compile Include="SetupProperties.cs" />
+    <Compile Include="SystemPathConstants.cs" />
+    <Compile Include="RegistryConstants.cs" />
     <Compile Include="JavaInstallUtil.cs" />
     <Compile Include="InstallerUtil.cs" />
     <Compile Include="Network.cs" />

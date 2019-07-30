@@ -12,58 +12,19 @@ using System.Threading.Tasks;
 
 namespace TinybotInstaller
 {
-    class Class1
+    static class Class1
     {
-        static string PSScriptRoot = "PSScriptRoot"; //Split-Path -Parent -Path MyInvocation.MyCommand.Definition;
-        static readonly string setup = Path.Combine(PSScriptRoot + @"\Setup\");
+        static readonly string rsinstall = @"C:\Users\Administrator\jagexcache\jagexlauncher\bin\JagexLauncher.exe";
+        static readonly string osrsprm = @"C:\Users\Administrator\jagexcache\jagexlauncher\oldschool\oldschool.prm";
+        static readonly string rs3prm = @"C:\Users\Administrator\jagexcache\jagexlauncher\runescape\runescape.prm";
 
-        static readonly string config = Path.Combine(setup, @"Config\");
-
-        static string firefox = Path.Combine(config + @"Firefox\");
-        static string firefoxinstall = @"C:\Program Files\Mozilla Firefox\";
-        static string os = Path.Combine(config, @"OS\");
-        static string oscopy = Path.Combine(os, @"Copy\");
-        static string pins = Path.Combine(config, @"Pins\");
-
-        static string install = Path.Combine(setup + @"Install\");
-
-        static string rs = Path.Combine(install, @"RS\");
-        static string rsinstall = @"C:\Users\Administrator\jagexcache\jagexlauncher\bin\JagexLauncher.exe";
-        static string osrsprm = @"C:\Users\Administrator\jagexcache\jagexlauncher\oldschool\oldschool.prm";
-        static string rs3prm = @"C:\Users\Administrator\jagexcache\jagexlauncher\runescape\runescape.prm";
-
-        static string chocolatey = Path.Combine(install, @"Chocolatey\");
-        static string chocolateyinstallscript = Path.Combine(chocolatey, "InstallChocolatey.ps1");
-        static string chocolateylocaltemp = @"C:\Users\Administrator\AppData\Local\Temp\chocolatey";
-
-        static string startup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Microsoft\Windows\Start Menu\Programs\Startup\");
-        static string windows = @"C:\Windows\";
-
-        static string runKey = "Run";
-        static string runOnceKey = "RunOnce";
-        static string hklm_WindowsCurrentVersion = @"HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion";
-        static string hkcu_WindowsCurrentVersion = @"HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion";
-        static string hklm_Run = Path.Combine(hklm_WindowsCurrentVersion, runKey);
-        static string hklm_RunOnce = Path.Combine(hklm_WindowsCurrentVersion, runOnceKey);
-        static string hkcu_RunOnce = Path.Combine(hkcu_WindowsCurrentVersion, runOnceKey);
-        static string hklm_WindowsNTCurrentVersion = @"HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
-
-        static readonly string tinybotVersionKey = "CurrentVersionTinybot";
-        static List<string> compatibleTinybotUpdgradeVersions = new List<string> { "4.4 Base 1" };
+        static readonly List<string> compatibleTinybotUpdgradeVersions = new List<string> { "4.4 Base 1" };
         static readonly Version newTinybotVersion = new Version("5.0.0.0");
-
-        //static string x64JavaFolderPath = @"C:\Program Files\Java\jre*\bin";
-        //static string x86JavaFolderPath = @"C:\Program Files (x86)\Java\jre*\bin";
-
-        static string cmdPath = @"C:\Windows\System32\cmd.exe";
-        static string cmdPathCommand = (cmdPath + " /c ");
 
         static bool cancelsetup = false;
 
         static int setWidth = 1280;
         static int setHeight = 720;
-
-        static string localChocolateyPackageFilePath = "";
 
         public partial class NativeMethods
         {
@@ -74,20 +35,7 @@ namespace TinybotInstaller
             public static extern bool BlockInput([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.Bool)] bool fBlockIt);
         }
 
-        public static void BlockInput(TimeSpan span)
-        {
-            try
-            {
-                NativeMethods.BlockInput(true);
-                Thread.Sleep(span);
-            }
-            finally
-            {
-                NativeMethods.BlockInput(false);
-            }
-        }
-
-        public void TinybotSetup()
+        public static void TinybotSetup()
         {
             var newTinybotVersion = new Version(5, 5, 0, 0);
             if (GetPendingReboot() == true)
@@ -104,8 +52,8 @@ namespace TinybotInstaller
                 DisableUserInput();
                 Console.WriteLine("Beginning setup for TinybotW10 v" + newTinybotVersion.ToString());
                 Console.WriteLine(@"Setup logs are located at: C:\Windows\Logs\TBSetup.log");
-                RegistryKey winNTCurrentVersion = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, hklm_WindowsNTCurrentVersion);
-                var currentTBVersion = String.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(hklm_WindowsNTCurrentVersion, tinybotVersionKey)));
+                RegistryKey winNTCurrentVersion = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH);
+                var currentTBVersion = String.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH, RegistryConstants.TINYBOT_VERSION_KEY)));
 
                 if (compatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
                 {
@@ -120,7 +68,7 @@ namespace TinybotInstaller
                     if (Network.TestInternetConnection() == true)
                     {
                         Console.WriteLine("Network connectivity confirmed...");
-                        SetupChocolatey(localChocolateyPackageFilePath);
+                        ChocoUtil.SetupChocolatey(ChocoUtil.LocalChocolateyPackageFilePath);
                         Console.WriteLine("===============================================================================");
                         Console.WriteLine("Checking for pre-existing Mozilla Firefox install...");
                         if (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "Mozilla Firefox * (x64 *)") == true)
@@ -130,7 +78,7 @@ namespace TinybotInstaller
                         else
                         {
                             Console.WriteLine("64-bit Mozilla Firefox not found. Attempting to install...");
-                            var firefoxInstalled = ChocoUpgrade("firefox", "Mozilla Firefox", true, "Mozilla Firefox * (x64 *)", true);
+                            var firefoxInstalled = ChocoUtil.ChocoUpgrade("firefox", "Mozilla Firefox", true, "Mozilla Firefox * (x64 *)", ChocoUtil.DefaultArgs);
                             if ((firefoxInstalled) == false)
                             {
                                 Console.WriteLine("Failed to install Mozilla Firefox. Please install manually or open CMD and type: choco upgrade firefox --force --y --ignorechecksum");
@@ -152,7 +100,7 @@ namespace TinybotInstaller
                         else
                         {
                             Console.WriteLine("64-bit WinRAR not found. Attempting to install...");
-                            var winrarInstalled = ChocoUpgrade("winrar", "WinRAR", true, "WinRAR*", true);
+                            var winrarInstalled = ChocoUtil.ChocoUpgrade("winrar", "WinRAR", true, "WinRAR*", ChocoUtil.DefaultArgs);
                             if ((winrarInstalled) == false)
                             {
                                 Console.WriteLine("Failed to install WinRAR. Please install manually or open CMD and type: choco upgrade winrar --force --y --ignorechecksum");
@@ -172,7 +120,7 @@ namespace TinybotInstaller
                         }
                         else
                         {
-                            var teamviewerInstalled = ChocoUpgrade("teamviewer", "TeamViewer", true, "TeamViewer*", true);
+                            var teamviewerInstalled = ChocoUtil.ChocoUpgrade("teamviewer", "TeamViewer", true, "TeamViewer*", ChocoUtil.DefaultArgs);
                             if ((teamviewerInstalled) == false)
                             {
                                 Console.WriteLine("Failed to install TeamViewer. Please install manually or open CMD and type: choco upgrade teamviewer --force --y --ignorechecksum");
@@ -190,7 +138,7 @@ namespace TinybotInstaller
                         if (!JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.X86, 8))
                         {
                             Console.WriteLine("32-bit Java is not installed. Attempting install...");
-                            ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update *", true);
+                            ChocoUtil.ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update *", ChocoUtil.DefaultArgs);
 
                             Console.WriteLine("Verifying install...");
                             if (!JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.X86, 8))
@@ -212,7 +160,7 @@ namespace TinybotInstaller
                         if (JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.BOTH, 8))
                         {
                             Console.WriteLine("64-bit Java is not installed. Attempting install...");
-                            ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update * (64-bit)", true);
+                            ChocoUtil.ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update * (64-bit)", ChocoUtil.DefaultArgs);
 
                             Console.WriteLine("Verifying install...");
                             if (JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.BOTH, 8))
@@ -237,7 +185,7 @@ namespace TinybotInstaller
                         }
                         else
                         {
-                            bool vmwareToolsInstalled = ChocoUpgrade("vmware-tools", "VMWare Tools", true, "VMWare Tools", false);
+                            bool vmwareToolsInstalled = ChocoUtil.ChocoUpgrade("vmware-tools", "VMWare Tools", true, "VMWare Tools", ChocoUtil.DefaultArgs);
                             if ((vmwareToolsInstalled) == false)
                             {
                                 Console.WriteLine("Failed to install VMWare Tools. Please install manually or open CMD and type: choco upgrade vmware-tools --force --y --ignorechecksum");
@@ -250,7 +198,7 @@ namespace TinybotInstaller
                             }
                         }
                         Console.WriteLine("===============================================================================");
-                        if (File.Exists(Path.Combine(pins, "Pins.vbs")))
+                        if (File.Exists(Path.Combine(SetupProperties.Pins, "Pins.vbs")))
                         {
                             SetupPins();
                         }
@@ -261,14 +209,14 @@ namespace TinybotInstaller
                         Console.WriteLine("===============================================================================");
                         ScheduleCleanup();
                         Console.WriteLine("===============================================================================");
-                        currentTBVersion = string.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(hklm_WindowsNTCurrentVersion, tinybotVersionKey)));
+                        currentTBVersion = string.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH, RegistryConstants.TINYBOT_VERSION_KEY)));
                         if (compatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
                         {
                             Console.WriteLine("Setup complete. Updating Tinybot version to 4.4 R1...");
                             var tbVersionKey = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\");
-                            tbVersionKey.SetValue(tinybotVersionKey, newTinybotVersion);
+                            tbVersionKey.SetValue(RegistryConstants.TINYBOT_VERSION_KEY, newTinybotVersion);
 
-                            if (tbVersionKey.GetValue(tinybotVersionKey).Equals(newTinybotVersion))
+                            if (tbVersionKey.GetValue(RegistryConstants.TINYBOT_VERSION_KEY).Equals(newTinybotVersion))
                             {
                                 Console.WriteLine("Tinybot version updated successfully!");
                                 Console.WriteLine("Rebooting to apply changes...");
@@ -304,22 +252,32 @@ namespace TinybotInstaller
                     //AsyncOpenMessageBoxMessage("Incompatible Tinybot version... Cannot perform setup... Please download the newest version from the 'How to Minimize Your Bot' thread.")
                     Console.WriteLine("Incompatible Tinybot version... Cannot perform setup... Please download the newest version from the 'How to Minimize Your Bot' thread.");
                     UndoTransaction();
-                    Cancelsetup();
+                    CancelSetup();
                 }
             }
         }
             
-        public void RestartComputer(int delay)
+        public static void RestartComputer(int delay)
         {
             System.Diagnostics.Process.Start("shutdown.exe", "-r -t " + delay);
         }
 
-        public void CompleteTransaction()
+        public static void CompleteTransaction()
         {
 
         }
 
-        public string ExecuteCMDCommand(string command)
+        public static void UndoTransaction()
+        {
+
+        }
+
+        public static void AsyncInstallerTimeout()
+        {
+
+        }
+
+        public static string ExecuteCMDCommand(string command)
         {
             Process cmd = new Process();
             cmd.StartInfo.FileName = "cmd.exe";
@@ -360,7 +318,7 @@ namespace TinybotInstaller
             }
         }
 
-        public void SetupOS()
+        public static void SetupOS()
         {
             try
             {
@@ -400,7 +358,7 @@ namespace TinybotInstaller
 
                     Console.Out.WriteLine(@"Copying files to C:\Windows\...");
 
-                    CopyFolderContents(new DirectoryInfo(oscopy + "Windows"), new DirectoryInfo(windows), false);
+                    CopyFolderContents(new DirectoryInfo(SetupProperties.Oscopy + "Windows"), new DirectoryInfo(SystemPathConstants.WindowsPath), false);
                     /*CopyItemPath($oscopy + "Windows\sleep.exe")Destination $windows Force
                     CopyItemPath($oscopy + "Windows\WAR.exe")Destination $windows Force
                     CopyItemPath($oscopy + "Windows\CheckTinybotVersion.exe")Destination $windows Force
@@ -408,15 +366,15 @@ namespace TinybotInstaller
 
                     Console.Out.WriteLine("===============================================================================");
                     Console.Out.WriteLine("Copying shortcuts to Desktop...");
-                    CopyFolderContents(new DirectoryInfo(Path.Combine(oscopy + @"Public Desktop")), new DirectoryInfo(@"C:\Users\Public\Desktop"), false);
+                    CopyFolderContents(new DirectoryInfo(Path.Combine(SetupProperties.Oscopy + @"Public Desktop")), new DirectoryInfo(@"C:\Users\Public\Desktop"), false);
                     //CopyItemPath(oscopy + "Public Desktop\Check Tinybot Version.lnk")Destination "C:\Users\Public\Desktop\"
                     Console.Out.WriteLine("===============================================================================");
                     Console.Out.WriteLine("Scheduling startup tasks...");
-                    Registry.SetValue(hklm_Run, "WAR", cmdPathCommand + "\"C:\\Windows\\WAR.exe\"");
+                    Registry.SetValue(RegistryConstants.HKLM_RUN_PATH, "WAR", SystemPathConstants.CmdPathCommand + "\"C:\\Windows\\WAR.exe\"");
                     if (VerifyOS(false) == true) {
-                        if (Directory.Exists(os))
+                        if (Directory.Exists(SetupProperties.Os))
                         {
-                            Directory.Delete(os, true);
+                            Directory.Delete(SetupProperties.Os, true);
                         }
                         CompleteTransaction();
                     }
@@ -445,17 +403,12 @@ namespace TinybotInstaller
             }
         }
 
-        public void CancelSetup()
+        public static void CancelSetup()
         {
-
+            cancelsetup = true;
         }
 
-        public void UndoTransaction()
-        {
-
-        }
-
-        public bool GetPendingReboot()
+        public static bool GetPendingReboot()
         {
             /*
              Check "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\" if a subkey named "RebootPending" is present. 
@@ -478,14 +431,14 @@ namespace TinybotInstaller
             return hasPendingReboot;
         }
 
-        public bool VerifyOS(bool silent)
+        public static bool VerifyOS(bool silent)
         {
-            var sleepExists = File.Exists(windows + "sleep.exe");
-            var WARExists = File.Exists(windows + "WAR.exe");
-            var CheckTinybotVersionExists = File.Exists(windows + "CheckTinybotVersion.exe");
-            var QResExists = File.Exists(windows + "QRes.exe");
+            var sleepExists = File.Exists(Path.Combine(SystemPathConstants.WindowsPath,"sleep.exe"));
+            var WARExists = File.Exists(Path.Combine(SystemPathConstants.WindowsPath, "WAR.exe"));
+            var CheckTinybotVersionExists = File.Exists(Path.Combine(SystemPathConstants.WindowsPath, "CheckTinybotVersion.exe"));
+            var QResExists = File.Exists(Path.Combine(SystemPathConstants.WindowsPath, "QRes.exe"));
             var CheckTinybotVersionShortcutExists = File.Exists(@"C:\Users\Public\Desktop\Check Tinybot Version.lnk");
-            var key = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, hklm_Run);
+            var key = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, RegistryConstants.HKLM_RUN_PATH);
             var WarRunKeyExists = RegistryUtil.RegistryKeyValueDataExists(key, "WAR", "C:\\Windows\\System32\\cmd.exe /c \"C:\\Windows\\WAR.exe\"");
 
             bool allExists = true;
@@ -554,12 +507,7 @@ namespace TinybotInstaller
             }
         }
 
-        public void AsyncInstallerTimeout()
-        {
-
-        }
-
-        public void SetupRS()
+        public static void SetupRS()
         {
             //Start-Transaction -RollbackPreference Error
             try
@@ -568,7 +516,7 @@ namespace TinybotInstaller
                 {
                     Console.Out.WriteLine("Installing OSRS client...");
                     //Start - Job - ScriptBlock scriptBlock - ArgumentList @(90, "Old School RuneScape", "InstallOSRS") | Out - Null
-                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(rs, "InstallOSRS.exe"));
+                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(SetupProperties.Rs, "InstallOSRS.exe"));
                     Process proc = new Process();
                     proc.StartInfo = start_info;
                     proc.Start();
@@ -588,7 +536,7 @@ namespace TinybotInstaller
                 {
                     Console.Out.WriteLine("Installing RS3 client...");
                     //Start - Job - ScriptBlock scriptBlock - ArgumentList @(90, "RuneScape 3", "InstallRS3") | Out - Null
-                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(rs, "InstallRS3.exe"));
+                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(SetupProperties.Rs, "InstallRS3.exe"));
                     Process proc = new Process();
                     proc.StartInfo = start_info;
                     proc.Start();
@@ -607,9 +555,9 @@ namespace TinybotInstaller
                 if (VerifyOSRS() == true && VerifyRS3() == true)
                 {
                     Console.Out.WriteLine("Installation of Old School RS and RuneScape 3 was successful...");
-                    if (Directory.Exists(rs))
+                    if (Directory.Exists(SetupProperties.Rs))
                     {
-                        Directory.Delete(rs, true);
+                        Directory.Delete(SetupProperties.Rs, true);
                     }
                     CompleteTransaction();
                 }
@@ -638,7 +586,7 @@ namespace TinybotInstaller
             }
         }
 
-        public bool VerifyOSRS()
+        public static bool VerifyOSRS()
         {
             if (File.Exists(rsinstall) && File.Exists(osrsprm))
             {
@@ -650,7 +598,7 @@ namespace TinybotInstaller
             }
         }
 
-        public bool VerifyRS3()
+        public static bool VerifyRS3()
         {
             if (File.Exists(rsinstall) && File.Exists(rs3prm))
             {
@@ -662,57 +610,7 @@ namespace TinybotInstaller
             }
         }
 
-        public void SetupChocolatey(string localChocolateyPackageFilePath)
-        {
-            //Start-Transaction -RollbackPreference Error
-            try
-            {
-                var ChocoInstallPath = Path.Combine(Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System)), @"ProgramData\Chocolatey\bin");
-                Console.Out.WriteLine("Installing Chocolatey...");
-                // Idempotence - do not install Chocolatey if it is already installed
-                if (!(File.Exists(ChocoInstallPath + "\\choco.exe")))
-                {
-                    string command = @"@powershell -NoProfile -ExecutionPolicy Bypass -Command ""iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"" && SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin";
-                    ExecuteCMDCommand(command);
-
-                    if ((File.Exists(ChocoInstallPath + "\\choco.exe")) == true)
-                    {
-                        //Get - ChildItem localChocolateyPackageFilePath - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;
-                        //Get - ChildItem chocolatey - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;
-                        Console.Out.WriteLine("Configuring Chocolatey to update apps at startup...");
-                        Registry.SetValue(hklm_Run, "Chocolatey", cmdPathCommand + "cup all --y --ignorechecksum");
-                        CompleteTransaction();
-                    }
-                    else
-                    {
-                        //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
-                        UndoTransaction();
-                        CancelSetup();
-                        throw new Exception("[0] Chocolatey installation failed... Rolling back...");
-                    }
-                }
-                else
-                {
-                    Console.Out.WriteLine("Chocolatey is already installed. Skipping...");
-                    CompleteTransaction();
-                }
-            }
-            catch
-            {
-                //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
-                UndoTransaction();
-                CancelSetup();
-                throw new Exception("[1] Chocolatey installation failed... Rolling back...");
-            }
-        }
-
-        public bool ChocoUpgrade(string pkgName, string displayName, bool verifyInstall, string searchName, bool allowWildcards)
-        {
-
-            return true;
-        }
-
-        public void ConfigureFirefox()
+        public static void ConfigureFirefox()
         {
             //Start-Transaction -RollbackPreference Error
             try
@@ -720,12 +618,12 @@ namespace TinybotInstaller
                 if (VerifyFirefox() == false)
                 {
                     Console.Out.WriteLine("Copying Mozilla Firefox configuration files...");
-                    File.Copy(Path.Combine(firefox, @"browser\override.ini"), Path.Combine(firefoxinstall, @"browser\override.ini"), true);
-                    File.Copy(Path.Combine(firefox, @"defaults\pref\autoconfig.js"), Path.Combine(firefoxinstall, @"defaults\pref\autoconfig.js"), true);
-                    File.Copy(Path.Combine(firefox, @"firefox.cfg"), firefoxinstall, true);
+                    File.Copy(Path.Combine(SetupProperties.Firefox, @"browser\override.ini"), Path.Combine(SetupProperties.Firefoxinstall, @"browser\override.ini"), true);
+                    File.Copy(Path.Combine(SetupProperties.Firefox, @"defaults\pref\autoconfig.js"), Path.Combine(SetupProperties.Firefoxinstall, @"defaults\pref\autoconfig.js"), true);
+                    File.Copy(Path.Combine(SetupProperties.Firefox, @"firefox.cfg"), SetupProperties.Firefoxinstall, true);
 
                     Console.Out.WriteLine("Setting Mozilla Firefox as default browser...");
-                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(firefoxinstall, @"uninstall\helper.exe"));
+                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(SetupProperties.Firefoxinstall, @"uninstall\helper.exe"));
                     start_info.Arguments = "/SetAsDefaultAppGlobal";
                     Process proc = new Process();
                     proc.StartInfo = start_info;
@@ -740,9 +638,9 @@ namespace TinybotInstaller
                     if (VerifyFirefox() == true)
                     {
                         Console.Out.WriteLine("Custom configurations successfully applied to Mozilla Firefox.");
-                        if (Directory.Exists(firefox))
+                        if (Directory.Exists(SetupProperties.Firefox))
                         {
-                            Directory.Delete(firefox);
+                            Directory.Delete(SetupProperties.Firefox);
                         }
                         CompleteTransaction();
                     }
@@ -768,12 +666,12 @@ namespace TinybotInstaller
             }
         }
 
-        public bool VerifyFirefox()
+        public static bool VerifyFirefox()
         {
             bool isVerified = false;
-            if (File.Exists(Path.Combine(firefoxinstall, @"browser\override.ini")) && 
-                File.Exists(Path.Combine(firefoxinstall, @"defaults\pref\autoconfig.js")) && 
-                File.Exists(Path.Combine(firefoxinstall, @"firefox.cfg")))
+            if (File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"browser\override.ini")) && 
+                File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"defaults\pref\autoconfig.js")) && 
+                File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"firefox.cfg")))
             {
                 return isVerified;
             }
@@ -781,7 +679,7 @@ namespace TinybotInstaller
             return isVerified;
         }
 
-        public void SetupPins()
+        public static void SetupPins()
         {
             //Start-Transaction -RollbackPreference Error
             try
@@ -791,13 +689,13 @@ namespace TinybotInstaller
                     File.Exists(@"C:\Users\Administrator\Desktop\OldSchool RuneScape.lnk") && 
                     File.Exists(@"C:\Users\Administrator\Desktop\RuneScape.lnk"))
                 {
-                    if (File.Exists(pins))
+                    if (File.Exists(SetupProperties.Pins))
                     {
                         //cscript(pins + "Pins.vbs")
                         Thread.Sleep(3000);
-                        if (File.Exists(pins))
+                        if (File.Exists(SetupProperties.Pins))
                         {
-                            Directory.Delete(pins, true);
+                            Directory.Delete(SetupProperties.Pins, true);
                         }
                     }
                     else
@@ -835,25 +733,25 @@ namespace TinybotInstaller
             }
         }
 
-        public void ScheduleCleanup()
+        public static void ScheduleCleanup()
         {
             //Start-Transaction -RollbackPreference Error
             try
             {
                 Console.Out.WriteLine("Scheduling cleanup...");
-                if (File.Exists(setup))
+                if (File.Exists(SetupProperties.Setup))
                 {
-                    Directory.Delete(setup, true);
+                    Directory.Delete(SetupProperties.Setup, true);
                 }
 
-                Registry.SetValue(hklm_RunOnce, "CleanupFirstSetup", cmdPathCommand + "del /q \"" + startup + "FirstSetup.exe\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_Run, "CleanupChocolatey", cmdPathCommand + "rmdir /s /q \"" + chocolateylocaltemp + "\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_RunOnce, "CleanupScriptFolder", cmdPathCommand + "rmdir /s /q \"" + PSScriptRoot + "\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_RunOnce, "CleanupLocalAppDataTemp1", cmdPathCommand + "del /S /Q \"C:\\Users\\Administrator\\AppData\\Local\\Temp\\*\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_RunOnce, "CleanupWindowsTemp1", cmdPathCommand + "del /S /Q \"C:\\Windows\\Temp\\*\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_RunOnce, "CleanupLocalAppDataTemp2", cmdPathCommand + "for /d %x in (\"C:\\Users\\Administrator\\AppData\\Local\\Temp\\*\") do @rd /s /q \"%x\"", RegistryValueKind.String);
-                Registry.SetValue(hklm_RunOnce, "CleanupWindowsTemp2", cmdPathCommand + "for /d %x in (\"C:\\Windows\\Temp\\*\") do @rd /s /q \"%x\"");
-                Registry.SetValue(hkcu_RunOnce, "SetResolution", cmdPathCommand + "sleep 3 && QRes.exe /x:" + setWidth + " /y:" + setHeight + " && taskkill /f /IM explorer.exe && start explorer.exe", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupFirstSetup", SystemPathConstants.CmdPathCommand + "del /q \"" + SystemPathConstants.StartupPath + "FirstSetup.exe\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_PATH, "CleanupChocolatey", SystemPathConstants.CmdPathCommand + "rmdir /s /q \"" + ChocoUtil.Chocolateylocaltemp + "\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupScriptFolder", SystemPathConstants.CmdPathCommand + "rmdir /s /q \"" + SetupProperties.ExecutionPath + "\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupLocalAppDataTemp1", SystemPathConstants.CmdPathCommand + "del /S /Q \"C:\\Users\\Administrator\\AppData\\Local\\Temp\\*\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupWindowsTemp1", SystemPathConstants.CmdPathCommand + "del /S /Q \"C:\\Windows\\Temp\\*\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupLocalAppDataTemp2", SystemPathConstants.CmdPathCommand + "for /d %x in (\"C:\\Users\\Administrator\\AppData\\Local\\Temp\\*\") do @rd /s /q \"%x\"", RegistryValueKind.String);
+                Registry.SetValue(RegistryConstants.HKLM_RUN_ONCE_PATH, "CleanupWindowsTemp2", SystemPathConstants.CmdPathCommand + "for /d %x in (\"C:\\Windows\\Temp\\*\") do @rd /s /q \"%x\"");
+                Registry.SetValue(RegistryConstants.HKCU_RUN_ONCE_PATH, "SetResolution", SystemPathConstants.CmdPathCommand + "sleep 3 && QRes.exe /x:" + setWidth + " /y:" + setHeight + " && taskkill /f /IM explorer.exe && start explorer.exe", RegistryValueKind.String);
                 CompleteTransaction();
             }
             catch
@@ -865,19 +763,40 @@ namespace TinybotInstaller
             }
         }
 
-        public void DisableUserInput()
+        public static void DisableUserInput(TimeSpan span, bool bIsSilent = false)
         {
-            BlockInput(new TimeSpan());
+            try
+            {
+               if (!bIsSilent)
+                {
+                    Console.Out.WriteLine("Disabling mouse and keyboard for " + span.ToString());
+                }
+                DisableUserInput();
+                Thread.Sleep(span);
+            }
+            finally
+            {
+                EnableUserInput();
+            }
         }
 
-        public void EnableUserInput()
+        public static void DisableUserInput()
         {
-
+            try
+            {
+                NativeMethods.BlockInput(true);
+            }
+            catch(Exception ex)
+            {
+                NativeMethods.BlockInput(false);
+                throw ex;
+            }
         }
 
-        public void Cancelsetup()
+        public static void EnableUserInput()
         {
-
+            Console.Out.WriteLine("Enabling mouse and keyboard...");
+            NativeMethods.BlockInput(false);
         }
     }
 }

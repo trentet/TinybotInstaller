@@ -24,13 +24,7 @@ namespace TinybotInstaller
         public MainWindow()
         {
             InitializeComponent();
-            /*var keyPath = @"HKEY_CURRENT_USER\SYSTEM\CurrentControlSet\Control\Session Manager";
-            //var keyPath = @"SYSTEM\CurrentControlSet\Control\Session Manager";
-            var keyValueName = "RunLevelValidate";
-            var desiredKeyValueData = "ServiceControlManager";
-            var result = RegistryUtil.RegistryKeyValueDataExists(RegistryHives.LOCAL_MACHINE, keyPath, keyValueName, desiredKeyValueData);*/
-            Class1 c = new Class1();
-            
+            SetupProperties.ExecutionPath = System.IO.Path.GetDirectoryName(new Uri(this.GetType().Assembly.GetName().CodeBase).LocalPath);
         }
     }
 }
