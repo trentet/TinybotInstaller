@@ -18,5 +18,6 @@ namespace TinybotInstaller
         public static readonly string HKCU_RUN_ONCE_PATH = Path.Combine(HKCU_WINDOWSCURRENTVERSION_PATH, RUN_ONCE_KEY);
         public static readonly string HKLM_WINDOWSNTCURRENTVERSION_PATH = @"HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
         public static readonly string TINYBOT_VERSION_KEY = "CurrentVersionTinybot";
+        public static readonly string TINYBOT_VERSION_KEY_PATH = Path.Combine(HKLM_WINDOWSNTCURRENTVERSION_PATH, TINYBOT_VERSION_KEY);
     }
 }

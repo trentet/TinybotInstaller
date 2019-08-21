@@ -37,7 +37,7 @@ namespace TinybotInstaller
                 var keyValue = key.GetValue(keyValueName);
                 if (keyValue != null)
                 {
-                    var keyValueData = String.Join("", (string[])keyValue);
+                    var keyValueData = string.Join("", (string[])keyValue);
                     if (keyValueData.Equals(desiredKeyValueData))
                     {
                         keyValueDataExists = true;

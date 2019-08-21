@@ -103,32 +103,32 @@ namespace TinybotInstaller
             return versions;
         }
 
-        public static bool IsJavaInstalled(InstallerUtil.Architectures architecture, int majorVersion)
+        public static bool IsJavaInstalled(ProgramInstaller.Architectures architecture, int majorVersion)
         {
             bool isInstalled = false;
 
-            if (architecture == InstallerUtil.Architectures.X86)
+            if (architecture == ProgramInstaller.Architectures.X86)
             {
                 if (Get32bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
-                    || InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X86, "Java " + majorVersion + " Update *"))
+                    || ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, "Java " + majorVersion + " Update *"))
                 {
                     isInstalled = true;
                 }
             }
-            else if (architecture == InstallerUtil.Architectures.X64)
+            else if (architecture == ProgramInstaller.Architectures.X64)
             {
                 if (Get64bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
-                    || InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)"))
+                    || ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)"))
                 {
                     isInstalled = true;
                 }
             }
-            else if (architecture == InstallerUtil.Architectures.BOTH)
+            else if (architecture == ProgramInstaller.Architectures.BOTH)
             {
                 if ((Get32bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
                     && Get64bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0) 
-                    || (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X86, "Java " + majorVersion + " Update *") 
-                    && InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)")))
+                    || (ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, "Java " + majorVersion + " Update *") 
+                    && ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)")))
                 {
                     isInstalled = true;
                 }

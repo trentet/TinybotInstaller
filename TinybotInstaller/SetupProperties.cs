@@ -19,5 +19,7 @@ namespace TinybotInstaller
         public static string Pins { get; } = Path.Combine(Config, @"Pins\");
         public static string Install { get; } = Path.Combine(Setup + @"Install\");
         public static string Rs { get; } = Path.Combine(Install, @"RS\");
+        public static List<string> CompatibleTinybotUpdgradeVersions { get; } = new List<string> { "4.4 Base 1" };
+        public static Version NewTinybotVersion { get; } = new Version("5.0.0.0");
     }
 }

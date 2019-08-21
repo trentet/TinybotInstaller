@@ -73,8 +73,8 @@ namespace TinybotInstaller
                     if ((verifyInstall) == true)
                     {
                         Console.Out.WriteLine("Checking for pre-existing installs...");
-                        var x86VersionExists = InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X86, searchName);
-                        var x64VersionExists = InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, searchName);
+                        var x86VersionExists = ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, searchName);
+                        var x64VersionExists = ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, searchName);
                         Console.Out.WriteLine("32-bit version found?: " + x86VersionExists);
                         Console.Out.WriteLine("64-bit version found?: " + x64VersionExists);
                     }
@@ -92,8 +92,8 @@ namespace TinybotInstaller
                     if ((verifyInstall) == true)
                     {
                         Console.Out.WriteLine("Verifying install...");
-                        var x86VersionExists = InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X86, searchName);
-                        var x64VersionExists = InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, searchName);
+                        var x86VersionExists = ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, searchName);
+                        var x64VersionExists = ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, searchName);
                         Console.Out.WriteLine("32-bit version found?: " + x86VersionExists);
                         Console.Out.WriteLine("64-bit version found?: " + x64VersionExists);
                         if (x64VersionExists == true || x86VersionExists == true)

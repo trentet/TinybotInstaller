@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace TinybotInstaller
 {
-    class InstallerUtil
+    class ProgramInstaller
     {
         public enum Architectures
         {

@@ -14,12 +14,17 @@ namespace TinybotInstaller
 {
     static class Class1
     {
+        public enum ComponentStatus
+        {
+            PASSED,
+            FAILED,
+            SKIPPED,
+            IN_PROGRESS
+        }
+
         static readonly string rsinstall = @"C:\Users\Administrator\jagexcache\jagexlauncher\bin\JagexLauncher.exe";
         static readonly string osrsprm = @"C:\Users\Administrator\jagexcache\jagexlauncher\oldschool\oldschool.prm";
         static readonly string rs3prm = @"C:\Users\Administrator\jagexcache\jagexlauncher\runescape\runescape.prm";
-
-        static readonly List<string> compatibleTinybotUpdgradeVersions = new List<string> { "4.4 Base 1" };
-        static readonly Version newTinybotVersion = new Version("5.0.0.0");
 
         static bool cancelsetup = false;
 
@@ -52,10 +57,10 @@ namespace TinybotInstaller
                 DisableUserInput();
                 Console.WriteLine("Beginning setup for TinybotW10 v" + newTinybotVersion.ToString());
                 Console.WriteLine(@"Setup logs are located at: C:\Windows\Logs\TBSetup.log");
-                RegistryKey winNTCurrentVersion = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH);
-                var currentTBVersion = String.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH, RegistryConstants.TINYBOT_VERSION_KEY)));
+                RegistryKey winNTCurrentVersion = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, RegistryConstants.TINYBOT_VERSION_KEY_PATH);
+                string currentTBVersion = string.Join("", (string[])winNTCurrentVersion.GetValue(RegistryConstants.TINYBOT_VERSION_KEY));
 
-                if (compatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
+                if (SetupProperties.CompatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
                 {
                     Console.WriteLine(@"Initializing setup. User input is disabled during this process. DO NOT SHUTDOWN OR RESTART! Script will automatically restart upon succesful completion. If setup hangs at any step longer than 30 minutes, please notify Trent! from RiD. Setup logs are located at: C:\Windows\Logs\TBSetup.log");
                     //Async-Open-MessageBox -Message ("Initializing setup. User input is disabled during this process. DO NOT SHUTDOWN OR RESTART! Script will automatically restart upon succesful completion. If setup hangs at any step longer than 30 minutes, please notify Trent! from RiD. Setup logs are located at: C:\Windows\Logs\TBSetup.log")
@@ -70,30 +75,10 @@ namespace TinybotInstaller
                         Console.WriteLine("Network connectivity confirmed...");
                         ChocoUtil.SetupChocolatey(ChocoUtil.LocalChocolateyPackageFilePath);
                         Console.WriteLine("===============================================================================");
-                        Console.WriteLine("Checking for pre-existing Mozilla Firefox install...");
-                        if (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "Mozilla Firefox * (x64 *)") == true)
-                        {
-                            Console.WriteLine("64-bit Mozilla Firefox is already installed. Skipping...");
-                        }
-                        else
-                        {
-                            Console.WriteLine("64-bit Mozilla Firefox not found. Attempting to install...");
-                            var firefoxInstalled = ChocoUtil.ChocoUpgrade("firefox", "Mozilla Firefox", true, "Mozilla Firefox * (x64 *)", ChocoUtil.DefaultArgs);
-                            if ((firefoxInstalled) == false)
-                            {
-                                Console.WriteLine("Failed to install Mozilla Firefox. Please install manually or open CMD and type: choco upgrade firefox --force --y --ignorechecksum");
-                                UndoTransaction();
-                                CancelSetup();
-                            }
-                            else
-                            {
-                                Console.WriteLine("Mozilla Firefox is installed.");
-                                ConfigureFirefox();
-                            }
-                        }
+                        FirefoxComponent.Setup();
                         Console.WriteLine("===============================================================================");
                         Console.WriteLine("Checking for pre-existing WinRAR install...");
-                        if (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "WinRAR*") == true)
+                        if (ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "WinRAR*") == true)
                         {
                             Console.WriteLine("64-bit WinRAR is already installed. Skipping...");
                         }
@@ -114,7 +99,7 @@ namespace TinybotInstaller
                         }
                         Console.WriteLine("===============================================================================");
                         Console.WriteLine("Checking for pre-existing TeamViewer install...");
-                        if (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X86, "TeamViewer*") == true)
+                        if (ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, "TeamViewer*") == true)
                         {
                             Console.WriteLine("32-bit TeamViewer is already installed. Skipping...");
                         }
@@ -135,13 +120,13 @@ namespace TinybotInstaller
                         Console.WriteLine("===============================================================================");
                         Console.WriteLine("Checking for pre-existing 32-bit Java SE 8 install...");
 
-                        if (!JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.X86, 8))
+                        if (!JavaInstallUtil.IsJavaInstalled(ProgramInstaller.Architectures.X86, 8))
                         {
                             Console.WriteLine("32-bit Java is not installed. Attempting install...");
                             ChocoUtil.ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update *", ChocoUtil.DefaultArgs);
 
                             Console.WriteLine("Verifying install...");
-                            if (!JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.X86, 8))
+                            if (!JavaInstallUtil.IsJavaInstalled(ProgramInstaller.Architectures.X86, 8))
                             {
                                 Console.WriteLine("32-bit Java failed to install...");
                                 UndoTransaction();
@@ -157,13 +142,13 @@ namespace TinybotInstaller
                             Console.WriteLine("32-bit Java is already installed.");
                         }
                         Console.WriteLine("Checking for pre-existing 64-bit Java SE 8 install...");
-                        if (JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.BOTH, 8))
+                        if (JavaInstallUtil.IsJavaInstalled(ProgramInstaller.Architectures.BOTH, 8))
                         {
                             Console.WriteLine("64-bit Java is not installed. Attempting install...");
                             ChocoUtil.ChocoUpgrade("jre8", "Java SE 8", false, "Java 8 Update * (64-bit)", ChocoUtil.DefaultArgs);
 
                             Console.WriteLine("Verifying install...");
-                            if (JavaInstallUtil.IsJavaInstalled(InstallerUtil.Architectures.BOTH, 8))
+                            if (JavaInstallUtil.IsJavaInstalled(ProgramInstaller.Architectures.BOTH, 8))
                             {
                                 Console.WriteLine("64-bit Java failed to install...");
                                 UndoTransaction();
@@ -180,7 +165,7 @@ namespace TinybotInstaller
                         }
                         Console.WriteLine("===============================================================================");
                         Console.WriteLine("Checking for pre-existing VMWare Tools install...");
-                        if (InstallerUtil.IsSoftwareInstalled(InstallerUtil.Architectures.X64, "VMWare Tools") == true) { 
+                        if (ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "VMWare Tools") == true) { 
                             Console.WriteLine("64-bit VMWare Tools is already installed. Skipping...");
                         }
                         else
@@ -210,7 +195,7 @@ namespace TinybotInstaller
                         ScheduleCleanup();
                         Console.WriteLine("===============================================================================");
                         currentTBVersion = string.Join("", (string[])winNTCurrentVersion.GetValue(Path.Combine(RegistryConstants.HKLM_WINDOWSNTCURRENTVERSION_PATH, RegistryConstants.TINYBOT_VERSION_KEY)));
-                        if (compatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
+                        if (SetupProperties.CompatibleTinybotUpdgradeVersions.Contains(currentTBVersion) == true)
                         {
                             Console.WriteLine("Setup complete. Updating Tinybot version to 4.4 R1...");
                             var tbVersionKey = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\");
@@ -608,75 +593,6 @@ namespace TinybotInstaller
             {
                 return false;
             }
-        }
-
-        public static void ConfigureFirefox()
-        {
-            //Start-Transaction -RollbackPreference Error
-            try
-            {
-                if (VerifyFirefox() == false)
-                {
-                    Console.Out.WriteLine("Copying Mozilla Firefox configuration files...");
-                    File.Copy(Path.Combine(SetupProperties.Firefox, @"browser\override.ini"), Path.Combine(SetupProperties.Firefoxinstall, @"browser\override.ini"), true);
-                    File.Copy(Path.Combine(SetupProperties.Firefox, @"defaults\pref\autoconfig.js"), Path.Combine(SetupProperties.Firefoxinstall, @"defaults\pref\autoconfig.js"), true);
-                    File.Copy(Path.Combine(SetupProperties.Firefox, @"firefox.cfg"), SetupProperties.Firefoxinstall, true);
-
-                    Console.Out.WriteLine("Setting Mozilla Firefox as default browser...");
-                    ProcessStartInfo start_info = new ProcessStartInfo(Path.Combine(SetupProperties.Firefoxinstall, @"uninstall\helper.exe"));
-                    start_info.Arguments = "/SetAsDefaultAppGlobal";
-                    Process proc = new Process();
-                    proc.StartInfo = start_info;
-                    proc.Start();
-                    proc.WaitForExit();
-
-                    start_info.Arguments = "/SetAsDefaultAppUser";
-                    proc.StartInfo = start_info;
-                    proc.Start();
-                    proc.WaitForExit();
-        
-                    if (VerifyFirefox() == true)
-                    {
-                        Console.Out.WriteLine("Custom configurations successfully applied to Mozilla Firefox.");
-                        if (Directory.Exists(SetupProperties.Firefox))
-                        {
-                            Directory.Delete(SetupProperties.Firefox);
-                        }
-                        CompleteTransaction();
-                    }
-                    else
-                    {
-                        //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
-                        UndoTransaction();
-                        CancelSetup();
-                        throw new Exception("[0] Firefox configuration failed... Rolling back...");
-                    }
-                }
-                else
-                {
-                    Console.Out.WriteLine("Firefox is already configured. Skipping...");
-                }
-            }
-            catch
-            {
-                //Console.Out.WriteLine(_.Exception.GetType().FullName, _.Exception.Message
-                UndoTransaction();
-                CancelSetup();
-                throw new Exception("[1] Firefox configuration failed... Rolling back...");
-            }
-        }
-
-        public static bool VerifyFirefox()
-        {
-            bool isVerified = false;
-            if (File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"browser\override.ini")) && 
-                File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"defaults\pref\autoconfig.js")) && 
-                File.Exists(Path.Combine(SetupProperties.Firefoxinstall, @"firefox.cfg")))
-            {
-                return isVerified;
-            }
-
-            return isVerified;
         }
 
         public static void SetupPins()
