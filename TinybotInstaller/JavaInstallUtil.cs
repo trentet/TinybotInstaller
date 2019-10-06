@@ -103,32 +103,22 @@ namespace TinybotInstaller
             return versions;
         }
 
-        public static bool IsJavaInstalled(ProgramInstaller.Architectures architecture, int majorVersion)
+        public static bool IsJavaInstalled(Architectures architecture, int majorVersion)
         {
             bool isInstalled = false;
 
-            if (architecture == ProgramInstaller.Architectures.X86)
+            if (architecture == Architectures.X86)
             {
                 if (Get32bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
-                    || ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, "Java " + majorVersion + " Update *"))
+                    || ProgramInstaller.IsSoftwareInstalled(Architectures.X86, "Java " + majorVersion + " Update *"))
                 {
                     isInstalled = true;
                 }
             }
-            else if (architecture == ProgramInstaller.Architectures.X64)
+            else if (architecture == Architectures.X64)
             {
                 if (Get64bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
-                    || ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)"))
-                {
-                    isInstalled = true;
-                }
-            }
-            else if (architecture == ProgramInstaller.Architectures.BOTH)
-            {
-                if ((Get32bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0
-                    && Get64bitJavaJREVersions().FindIndex(item => item.Major == majorVersion) >= 0) 
-                    || (ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X86, "Java " + majorVersion + " Update *") 
-                    && ProgramInstaller.IsSoftwareInstalled(ProgramInstaller.Architectures.X64, "Java " + majorVersion + " Update * (64-bit)")))
+                    || ProgramInstaller.IsSoftwareInstalled(Architectures.X64, "Java " + majorVersion + " Update * (64-bit)"))
                 {
                     isInstalled = true;
                 }

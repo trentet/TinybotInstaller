@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +36,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PowerManagerAPI, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\PowerManagerAPI.0.1.0-ci-20170528-042127\lib\net452\PowerManagerAPI.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Management" />
@@ -66,9 +70,28 @@
     </Compile>
     <Compile Include="Class1.cs" />
     <Compile Include="ChocoUtil.cs" />
-    <Compile Include="FirefoxComponent.cs" />
+    <Compile Include="Components\OS.cs" />
+    <Compile Include="Components\OSRS.cs" />
+    <Compile Include="Components\RS3.cs" />
+    <Compile Include="Components\VMWareTools.cs" />
+    <Compile Include="PowerManagement\Read.cs" />
+    <Compile Include="PowerManagement\Write.cs" />
+    <Compile Include="PowerOptions.cs" />
+    <Compile Include="Tasks\ComponentTaskPresets.cs" />
+    <Compile Include="Components\JavaX64.cs" />
+    <Compile Include="Components\JavaX86.cs" />
+    <Compile Include="Components\TeamViewer.cs" />
+    <Compile Include="Components\WinRAR.cs" />
+    <Compile Include="Components\Firefox.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="Installer.cs" />
+    <Compile Include="SystemUtil.cs" />
+    <Compile Include="Tasks\ChocoInstallTaskData.cs" />
+    <Compile Include="Tasks\ComponentTask.cs" />
+    <Compile Include="Tasks\SetupTasks.cs" />
+    <Compile Include="Tasks\CleanupTask.cs" />
+    <Compile Include="Tasks\ValidationTask.cs" />
+    <Compile Include="Tasks\SetupTask.cs" />
     <Compile Include="TinybotUtil.cs" />
     <Compile Include="SetupProperties.cs" />
     <Compile Include="SystemPathConstants.cs" />
@@ -101,6 +124,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -108,6 +132,26 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="IWshRuntimeLibrary">
+      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Shell32">
+      <Guid>{50A7E9B0-70EF-11D1-B75A-00A0C90564FE}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

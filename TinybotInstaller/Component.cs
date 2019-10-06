@@ -3,30 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TinybotInstaller.Tasks;
 
 namespace TinybotInstaller
 {
     class Component
     {
-        private string name;
-        private object componentType;
-        private List<object> tasks = new List<object>();
+        public string Name { get; set; }
+        public Dictionary<int, ComponentTask> ComponentTasks { get; set; } = new Dictionary<int, ComponentTask>();
 
-        public bool VerifyPrerequisites()
+        public Component(string name)
         {
-
-            return false;
+            this.Name = name;
         }
 
-        public void ExecuteTasks()
+        public Component(string name, Dictionary<int, ComponentTask> componentTasks)
         {
-            
-        }
-
-        public bool VerifyTaskCompletion()
-        {
-
-            return false;
+            this.Name = name;
+            this.ComponentTasks = componentTasks;
         }
     }
 }

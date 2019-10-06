@@ -9,23 +9,21 @@ using System.Threading.Tasks;
 
 namespace TinybotInstaller
 {
+    public enum Architectures
+    {
+        X86 = 1,
+        X64 = 2
+    }
     class ProgramInstaller
     {
-        public enum Architectures
-        {
-            X86 = 1,
-            X64 = 2,
-            BOTH = 3
-        }
-
         public static bool IsSoftwareInstalled(Architectures architecture, string softwareName, string remoteMachine = null, StringComparison strComparison = StringComparison.Ordinal)
         {
             List<string> uninstallRegKeys = new List<string>();
-            if(architecture == Architectures.X86 || architecture == Architectures.BOTH)
+            if(architecture == Architectures.X86)// || architecture == Architectures.BOTH)
             {
                 uninstallRegKeys.Add(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall");
             }
-            if (architecture == Architectures.X64 || architecture == Architectures.BOTH)
+            if (architecture == Architectures.X64)// || architecture == Architectures.BOTH)
             {
                 uninstallRegKeys.Add(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
             }
