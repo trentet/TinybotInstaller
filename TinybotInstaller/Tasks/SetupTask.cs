@@ -26,6 +26,21 @@ namespace TinybotInstaller.Tasks
         }
 
         public SetupTask(
+            List<Func<bool>> prerequisiteValidationActions,
+            Action setupAction,
+            Func<bool> postSetupValidationAction,
+            bool force)
+        {
+            foreach (Func<bool> prerequisiteValidationAction in prerequisiteValidationActions)
+            {
+                this.prerequisiteValidationTasks.Add(new ValidationTask(prerequisiteValidationAction));
+            }
+            this.task = new Task(setupAction);
+            this.postSetupValidationTasks.Add(new ValidationTask(postSetupValidationAction));
+            this.force = force;
+        }
+
+        public SetupTask(
             Func<bool> prerequisiteValidationAction,
             Action<object> setupAction,
             object setupActionParam,

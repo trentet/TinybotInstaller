@@ -21,5 +21,8 @@ namespace TinybotInstaller
         public static string Rs { get; } = Path.Combine(Install, @"RS\");
         public static List<string> CompatibleTinybotUpdgradeVersions { get; } = new List<string> { "4.4 Base 1" };
         public static Version NewTinybotVersion { get; } = new Version("5.0.0.0");
+        public static int DisplayWidth { get; } = 1280;
+        public static int DisplayHeight { get; } = 720;
+
     }
 }

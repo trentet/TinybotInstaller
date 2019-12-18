@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,13 +22,20 @@ namespace TinybotInstaller.Components
             Func<bool> isChocoInstalledAction =
                () => ChocoUtil.IsChocoInstalled();
 
+            Func<bool> isInternetConnected =
+                () => Network.TestInternetConnection();
+
+            List<Func<bool>> prereqFuncs = new List<Func<bool>>() { isInternetConnected, isChocoInstalledAction };
+
             Action installProgramAction =
                () => ChocoUtil.ChocoUpgrade(pkgName, displayName, false, searchMask, ChocoUtil.DefaultArgs);
 
             Func<bool> isProgramInstalledAction =
                () => ProgramInstaller.IsSoftwareInstalled(architecture, searchMask);
 
-            return new ComponentTask(new SetupTask(isChocoInstalledAction, installProgramAction, isProgramInstalledAction, force), null);
+            
+
+            return new ComponentTask(new SetupTask(prereqFuncs, installProgramAction, isProgramInstalledAction, force), null);
         }
 
         public static ComponentTask PinProgramOrShortcutToTaskbar(string programOrShortcutFilePath)
@@ -77,6 +85,159 @@ namespace TinybotInstaller.Components
                         isProgramOrShortcutPinned, 
                         false), 
                 null);
+        }
+
+        public static ComponentTask SetRegistryRunCommand(
+            bool runOnce,
+            RegistryUtil.StartupRegistryHives startupRegistryHive,
+            string registryKeyValueName,
+            CLICommand command,
+            StringComparison validationStringComparison
+            )
+        {
+            /************************************************
+             * Task Type: Setup
+             * Task Prerequisite: None.
+             * Task Description: Create a Run or RunOnce registry key 
+             *                   at the HKLM or HKCU registry hive for 
+             *                   a cmd /c command.
+             * Task Validation: No cleanup required.
+             ************************************************/
+
+            Func<bool> prequisiteFunc = null;
+
+            Action setupAction =
+            () => RegistryUtil.SetRunCommand(
+                    runOnce,
+                    startupRegistryHive,
+                    registryKeyValueName,
+                    command);
+
+            Func<bool> setupActionValidation =
+            () => RegistryUtil.RegistryKeyValueDataExists(
+                    RegistryUtil.GetStartupRunKey(runOnce, startupRegistryHive),
+                    registryKeyValueName,
+                    SystemPathConstants.CmdPathCommand + " " + command.ToString(),
+                    validationStringComparison);
+
+            SetupTask setupTask = new SetupTask(prequisiteFunc, setupAction, setupActionValidation, true);
+
+            /************************************************/
+
+            /************************************************
+             * Task Type: Cleanup
+             * Task Description: No cleanup required.
+             ************************************************/
+            Action cleanupAction = null;
+            Func<bool> cleanupActionValidation = null;
+
+            CleanupTask cleanupTask = new CleanupTask(cleanupAction, cleanupActionValidation);
+
+            /************************************************/
+
+            return new ComponentTask(setupTask, cleanupTask);
+        }
+
+        public static ComponentTask SetRegistryRunCommand(
+            bool runOnce,
+            RegistryUtil.StartupRegistryHives startupRegistryHive,
+            string registryKeyValueName,
+            CLICommand[] commands,
+            StringComparison validationStringComparison
+            )
+        {
+            /************************************************
+             * Task Type: Setup
+             * Task Prerequisite: None.
+             * Task Description: Create a Run or RunOnce registry key 
+             *                   at the HKLM or HKCU registry hive for 
+             *                   a cmd /c command.
+             * Task Validation: No cleanup required.
+             ************************************************/
+
+            Func<bool> prequisiteFunc = null;
+
+            Action setupAction =
+            () => RegistryUtil.SetRunCommand(
+                    runOnce,
+                    startupRegistryHive,
+                    registryKeyValueName,
+                    commands);
+
+            Func<bool> setupActionValidation =
+            () => RegistryUtil.RegistryKeyValueDataExists(
+                    RegistryUtil.GetStartupRunKey(runOnce, startupRegistryHive),
+                    registryKeyValueName,
+                    SystemPathConstants.CmdPathCommand + " " + CMDCommands.ToOneLine(commands),
+                    validationStringComparison);
+
+            SetupTask setupTask = new SetupTask(prequisiteFunc, setupAction, setupActionValidation, true);
+
+            /************************************************/
+
+            /************************************************
+             * Task Type: Cleanup
+             * Task Description: No cleanup required.
+             ************************************************/
+            Action cleanupAction = null;
+            Func<bool> cleanupActionValidation = null;
+
+            CleanupTask cleanupTask = new CleanupTask(cleanupAction, cleanupActionValidation);
+
+            /************************************************/
+
+            return new ComponentTask(setupTask, cleanupTask);
+        }
+
+        public static ComponentTask SetRegistryRunCommand(
+            bool runOnce,
+            RegistryUtil.StartupRegistryHives startupRegistryHive,
+            string registryKeyValueName,
+            CMDForLoopCommand command,
+            StringComparison validationStringComparison
+            )
+        {
+            /************************************************
+             * Task Type: Setup
+             * Task Prerequisite: None.
+             * Task Description: Create a Run or RunOnce registry key 
+             *                   at the HKLM or HKCU registry hive for 
+             *                   a cmd /c command.
+             * Task Validation: No cleanup required.
+             ************************************************/
+
+            Func<bool> prequisiteFunc = null;
+
+            Action setupAction =
+            () => RegistryUtil.SetRunCommand(
+                    runOnce,
+                    startupRegistryHive,
+                    registryKeyValueName,
+                    command);
+
+            Func<bool> setupActionValidation =
+            () => RegistryUtil.RegistryKeyValueDataExists(
+                    RegistryUtil.GetStartupRunKey(runOnce, startupRegistryHive),
+                    registryKeyValueName,
+                    SystemPathConstants.CmdPathCommand + " " + command.ToString(),
+                    validationStringComparison);
+
+            SetupTask setupTask = new SetupTask(prequisiteFunc, setupAction, setupActionValidation, true);
+
+            /************************************************/
+
+            /************************************************
+             * Task Type: Cleanup
+             * Task Description: No cleanup required.
+             ************************************************/
+            Action cleanupAction = null;
+            Func<bool> cleanupActionValidation = null;
+
+            CleanupTask cleanupTask = new CleanupTask(cleanupAction, cleanupActionValidation);
+
+            /************************************************/
+
+            return new ComponentTask(setupTask, cleanupTask);
         }
     }
 }

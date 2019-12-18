@@ -34,7 +34,7 @@ namespace TinybotInstaller
                     string command = @"@powershell -NoProfile -ExecutionPolicy Bypass -Command ""iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"" && SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin";
                     SystemUtil.ExecuteCMDCommand(command);
 
-                    if ((File.Exists(ChocoInstallPath + "\\choco.exe")) == true)
+                    if (IsChocoInstalled())
                     {
                         //Get - ChildItem localChocolateyPackageFilePath - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;
                         //Get - ChildItem chocolatey - Recurse - Force - ErrorAction SilentlyContinue | Remove - Item - Recurse - Force - Confirm:false;

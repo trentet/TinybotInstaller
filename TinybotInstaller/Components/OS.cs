@@ -262,7 +262,7 @@ namespace TinybotInstaller.Components
             var QResExists = File.Exists(Path.Combine(SystemPathConstants.WindowsPath, "QRes.exe"));
             var CheckTinybotVersionShortcutExists = File.Exists(@"C:\Users\Public\Desktop\Check Tinybot Version.lnk");
             var key = RegistryUtil.OpenSubKey(RegistryUtil.RegistryHives.LOCAL_MACHINE, RegistryConstants.HKLM_RUN_PATH);
-            var WarRunKeyExists = RegistryUtil.RegistryKeyValueDataExists(key, "WAR", "C:\\Windows\\System32\\cmd.exe /c \"C:\\Windows\\WAR.exe\"");
+            var WarRunKeyExists = RegistryUtil.RegistryKeyValueDataExists(key, "WAR", SystemPathConstants.CmdPathCommand + " " + StringUtil.DQuote(Path.Combine(SystemPathConstants.WindowsPath, @"WAR.exe")), StringComparison.OrdinalIgnoreCase);
 
             bool allExists = true;
 
