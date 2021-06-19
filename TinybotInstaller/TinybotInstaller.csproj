@@ -67,7 +67,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainWindow.xaml">
+    <Page Include="UI\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -76,44 +76,43 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Class1.cs" />
-    <Compile Include="ChocoUtil.cs" />
-    <Compile Include="CLICommand.cs" />
-    <Compile Include="CMDCommands.cs" />
-    <Compile Include="CMDForLoopCommand.cs" />
-    <Compile Include="CommandOption.cs" />
-    <Compile Include="Components\Chocolatey.cs" />
-    <Compile Include="Components\OS.cs" />
-    <Compile Include="Components\OSRS.cs" />
-    <Compile Include="Components\RS3.cs" />
-    <Compile Include="Components\TBSetupCompletion.cs" />
-    <Compile Include="Components\VMWareTools.cs" />
+    <Compile Include="Utilities\Choco\ChocoUtil.cs" />
+    <Compile Include="Utilities\Dev\SourceGeneration\CLICommand.cs" />
+    <Compile Include="Utilities\Dev\SourceGeneration\CMDCommands.cs" />
+    <Compile Include="Utilities\Dev\SourceGeneration\CMDForLoopCommand.cs" />
+    <Compile Include="Utilities\Dev\SourceGeneration\CommandOption.cs" />
+    <Compile Include="Components\Implementation\Chocolatey.cs" />
+    <Compile Include="Components\Implementation\OS.cs" />
+    <Compile Include="Components\Implementation\OSRS.cs" />
+    <Compile Include="Components\Implementation\RS3.cs" />
+    <Compile Include="Components\Implementation\TBSetupCompletion.cs" />
+    <Compile Include="Components\Implementation\VMWareTools.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="PowerOptions.cs" />
-    <Compile Include="StringUtil.cs" />
+    <Compile Include="Utilities\Windows\Power\PowerOptions.cs" />
+    <Compile Include="Utilities\Dev\StringUtil.cs" />
     <Compile Include="Tasks\ComponentTaskPresets.cs" />
-    <Compile Include="Components\JavaX64.cs" />
-    <Compile Include="Components\JavaX86.cs" />
-    <Compile Include="Components\TeamViewer.cs" />
-    <Compile Include="Components\WinRAR.cs" />
-    <Compile Include="Components\Firefox.cs" />
-    <Compile Include="Component.cs" />
+    <Compile Include="Components\Implementation\JavaX64.cs" />
+    <Compile Include="Components\Implementation\JavaX86.cs" />
+    <Compile Include="Components\Implementation\TeamViewer.cs" />
+    <Compile Include="Components\Implementation\WinRAR.cs" />
+    <Compile Include="Components\Implementation\Firefox.cs" />
+    <Compile Include="Components\Model\Component.cs" />
     <Compile Include="Installer.cs" />
-    <Compile Include="SystemUtil.cs" />
+    <Compile Include="Utilities\Windows\SystemUtil.cs" />
     <Compile Include="Tasks\ChocoInstallTaskData.cs" />
     <Compile Include="Tasks\ComponentTask.cs" />
     <Compile Include="Tasks\CleanupTask.cs" />
     <Compile Include="Tasks\ValidationTask.cs" />
     <Compile Include="Tasks\SetupTask.cs" />
-    <Compile Include="TinybotUtil.cs" />
     <Compile Include="SetupProperties.cs" />
-    <Compile Include="SystemPathConstants.cs" />
-    <Compile Include="RegistryConstants.cs" />
-    <Compile Include="JavaInstallUtil.cs" />
-    <Compile Include="ProgramInstaller.cs" />
-    <Compile Include="Network.cs" />
-    <Compile Include="RegistryHive.cs" />
-    <Compile Include="RegistryUtil.cs" />
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Utilities\Windows\SystemPathConstants.cs" />
+    <Compile Include="Utilities\Windows\Registry\RegistryConstants.cs" />
+    <Compile Include="Utilities\Windows\Applications\Java\JavaInstallUtil.cs" />
+    <Compile Include="Utilities\Windows\Applications\ProgramInstaller.cs" />
+    <Compile Include="Utilities\Windows\Networking\Network.cs" />
+    <Compile Include="Utilities\Windows\Registry\RegistryHive.cs" />
+    <Compile Include="Utilities\Windows\Registry\RegistryUtil.cs" />
+    <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
@@ -176,6 +175,7 @@
     <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers.2.9.8\analyzers\dotnet\cs\Microsoft.NetFramework.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers.2.9.8\analyzers\dotnet\cs\Microsoft.NetFramework.CSharp.Analyzers.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

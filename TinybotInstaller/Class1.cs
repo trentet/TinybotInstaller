@@ -1,14 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace TinybotInstaller
 {
@@ -39,7 +32,7 @@ namespace TinybotInstaller
                 */
                 RegistryKey key = 
                     RegistryUtil.OpenSubKey(
-                            RegistryUtil.RegistryHives.LOCAL_MACHINE, 
+                            RegistryUtil.RegistryHives.LOCAL_MACHINE,
                             @"SYSTEM\CurrentControlSet\Services\Mouclass"
                     );
 
